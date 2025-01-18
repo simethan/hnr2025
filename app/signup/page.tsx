@@ -1,34 +1,35 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { supabase } from '@/lib/supabase'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/lib/supabase";
 
 export default function Signup() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const router = useRouter()
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const { error, data: { user } } = await supabase.auth.signUp({
+    e.preventDefault();
+    const {
+      error,
+      data: { user },
+    } = await supabase.auth.signUp({
       email,
       password,
-    })
+    });
 
-    const res = await supabase
-      .from('profiles')
-      .upsert({ id: user.id, name })
+    const res = await supabase.from("profiles").upsert({ id: user?.id, name });
 
     if (error || res.error) {
-      console.error(error)
+      console.error(error);
     } else {
-      router.push('/login')
+      router.push("/login");
     }
-  }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
@@ -56,10 +57,11 @@ export default function Signup() {
             onChange={(e) => setPassword(e.target.value)}
             className="mb-4"
           />
-          <Button type="submit" className="w-full">Sign Up</Button>
+          <Button type="submit" className="w-full">
+            Sign Up
+          </Button>
         </form>
       </main>
     </div>
-  )
+  );
 }
-
