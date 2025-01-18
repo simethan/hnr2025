@@ -9,11 +9,12 @@ import { supabase } from "@/lib/supabase";
 import { pdfToText } from "./backend";
 
 export default function Profile() {
-  const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [githubUrl, setGithubUrl] = useState("");
-  const [resumeUrl, setResumeUrl] = useState("");
-  const [cookedScore, setCookedScore] = useState(0);
-  const router = useRouter();
+  const [linkedinUrl, setLinkedinUrl] = useState('')
+  const [githubUrl, setGithubUrl] = useState('')
+  const [resumeUrl, setResumeUrl] = useState('')
+  const [cookedScore, setCookedScore] = useState(0)
+  const router = useRouter()
+  const [githubLanguages, setGithubLanguages] = useState<Record<string, number>>({})
 
   useEffect(() => {
     fetchProfile();
@@ -52,6 +53,37 @@ export default function Profile() {
     }
   };
 
+  const fetchGithubLanguages = async (username: string) => {
+    try {
+      const response = await fetch(`https://api.github.com/users/${username}/repos`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch repos')
+      }
+      const repos = await response.json()
+
+      let languageCounts: Record<string, number> = {}
+
+      for (const repo of repos) {
+        const langResponse = await fetch(repo.languages_url)
+        if (!langResponse.ok) {
+          throw new Error('Failed to fetch languages')
+        }
+        const repoLanguages = await langResponse.json()
+
+        for (const [lang, bytes] of Object.entries(repoLanguages)) {
+          languageCounts[lang] = (languageCounts[lang] || 0) + (bytes as number)
+        }
+      }
+
+      setGithubLanguages(languageCounts)
+      console.log(languageCounts);
+      return languageCounts
+    } catch (error) {
+      console.error('Error fetching GitHub languages:', error)
+      return {}
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const {
@@ -77,16 +109,42 @@ export default function Profile() {
     } else if (data) {
       pdfToText(resumeUrl);
       setCookedScore(calculateCookedScore(data));
+      const githubUsername = githubUrl.split('/').pop()
+      if (githubUsername) {
+        const languages = await fetchGithubLanguages(githubUsername)
+        setCookedScore(calculateCookedScore(data, languages))
+      } else {
+        setCookedScore(calculateCookedScore(data, {}))
+      }
     }
   };
 
-  const calculateCookedScore = (profile: any): number => {
-    let score = 0;
-    if (profile.linkedin_url) score += 0.3;
-    if (profile.github_url) score += 0.4;
-    if (profile.resume_url) score += 0.3;
-    return Math.min(score * 10, 10);
-  };
+  const calculateCookedScore = (profile: any, languages: Record<string, number>): number => {
+    let score = 0
+    if (profile.linkedin_url) score += 0.3
+    if (profile.github_url) score += 0.4
+    if (profile.resume_url) score += 0.3
+
+    // Calculate language score
+    const nicheLangs = ['Rust', 'Haskell', 'Scala', 'Elixir', 'Clojure', 'F#', 'OCaml', 'Erlang']
+    const commonLangs = ['JavaScript', 'Python', 'Java', 'C++', 'C#', 'PHP', 'Ruby', 'Go', 'Swift']
+
+    let langScore = 0
+    for (const lang in languages) {
+      if (nicheLangs.includes(lang)) {
+        langScore += 0.5
+      } else if (!commonLangs.includes(lang)) {
+        langScore += 0.2
+      }
+    }
+
+    // Cap the language score at 3
+    langScore = Math.min(langScore, 3)
+
+    // Combine scores
+    score = score * 7 + langScore
+    return Math.min(score, 10)
+  }
 
   const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
