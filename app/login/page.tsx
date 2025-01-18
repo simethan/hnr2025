@@ -1,29 +1,29 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { supabase } from '@/lib/supabase'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/lib/supabase";
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    })
+    });
 
     if (error) {
-      console.error(error)
+      console.error(error);
     } else {
-      router.push('/home')
+      router.push("/home");
     }
-  }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
@@ -44,10 +44,11 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             className="mb-4"
           />
-          <Button type="submit" className="w-full">Login</Button>
+          <Button type="submit" className="w-full">
+            Login
+          </Button>
         </form>
       </main>
     </div>
-  )
+  );
 }
-
