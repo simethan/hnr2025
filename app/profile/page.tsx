@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CookedMeter } from '@/app/components/CookedMeter'
 import { supabase } from '@/lib/supabase'
+import axios from 'axios'
+
 
 export default function Profile() {
   const [linkedinUrl, setLinkedinUrl] = useState('')
@@ -13,6 +15,7 @@ export default function Profile() {
   const [resumeUrl, setResumeUrl] = useState('')
   const [cookedScore, setCookedScore] = useState(0)
   const router = useRouter()
+  const [githubLanguages, setGithubLanguages] = useState<Record<string, number>>({})
 
   useEffect(() => {
     fetchProfile()
@@ -49,6 +52,31 @@ export default function Profile() {
     }
   }
 
+  const fetchGithubLanguages = async (username: string) => {
+    try {
+      const response = await axios.get(`https://api.github.com/users/${username}/repos`)
+      const repos = response.data
+
+      let languageCounts: Record<string, number> = {}
+
+      for (const repo of repos) {
+        const langResponse = await axios.get(repo.languages_url)
+        const repoLanguages = langResponse.data
+
+        for (const [lang, bytes] of Object.entries(repoLanguages)) {
+          languageCounts[lang] = (languageCounts[lang] || 0) + (bytes as number)
+        }
+      }
+
+      setGithubLanguages(languageCounts)
+      console.log(languageCounts);
+      return languageCounts
+    } catch (error) {
+      console.error('Error fetching GitHub languages:', error)
+      return {}
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const { data: { user } } = await supabase.auth.getUser()
@@ -70,11 +98,17 @@ export default function Profile() {
     if (error) {
       console.error(error)
     } else if (data) {
-      setCookedScore(calculateCookedScore(data))
+      const githubUsername = githubUrl.split('/').pop()
+      if (githubUsername) {
+        const languages = await fetchGithubLanguages(githubUsername)
+        setCookedScore(calculateCookedScore(data, languages))
+      } else {
+        setCookedScore(calculateCookedScore(data, {}))
+      }
     }
   }
 
-  const calculateCookedScore = (profile: any): number => {
+  const calculateCookedScore = (profile: any, languages: Record<string, number>): number => {
     let score = 0
     if (profile.linkedin_url) score += 0.3
     if (profile.github_url) score += 0.4
