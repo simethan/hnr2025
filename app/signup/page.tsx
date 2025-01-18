@@ -22,11 +22,13 @@ export default function Signup() {
     const res = await supabase
       .from('profiles')
       .upsert({ id: user.id, name })
+      .select()
+      .single()
 
     if (error || res.error) {
       console.error(error)
     } else {
-      router.push('/login')
+      router.push('/profile')
     }
   }
 
