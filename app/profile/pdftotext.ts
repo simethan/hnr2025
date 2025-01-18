@@ -5,7 +5,7 @@ export async function pdfToText(pdfUrl: string) {
   try {
     crawler(pdfUrl).then(function (response: any) {
       // handle response
-      console.log(response.text);
+      console.log(response.text || "No response");
       return response.text;
     });
   } catch (error) {

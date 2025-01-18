@@ -13,6 +13,7 @@ export default function Profile() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [resumeUrl, setResumeUrl] = useState("");
+  const [resumeText, setResumeText] = useState("");
   const [cookedScore, setCookedScore] = useState(0);
   const router = useRouter();
 
@@ -46,13 +47,12 @@ export default function Profile() {
       setCookedScore(data.cooked_score || 0);
     }
 
+    if (!data?.resume_url) return 
+
     // Fetch resume URL if it exists
-    if (data?.resume_url) {
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("resumes").getPublicUrl(data.resume_url);
-      setResumeUrl(publicUrl);
-    }
+
+    var resumeText = await pdfToText(data.resume_url);
+    
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +78,7 @@ export default function Profile() {
     if (error) {
       console.error(error);
     } else if (data) {
-      pdfToText(resumeUrl);
+      await pdfToText(resumeUrl);
       setCookedScore(calculateCookedScore(data));
     }
   };
@@ -110,6 +110,7 @@ export default function Profile() {
     if (error) {
       console.error(error);
     } else if (data) {
+      console.log(data);
       const {
         data: { publicUrl },
       } = supabase.storage.from("resumes").getPublicUrl(data.path);
