@@ -119,7 +119,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
+    <div className="flex flex-col items-center justify-center min-h-screen py-2 background-home steak-color">
       <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
         <h1 className="text-4xl font-bold mb-8">Your Profile</h1>
         <form onSubmit={handleSubmit} className="w-full max-w-xs mb-8">
@@ -143,7 +143,7 @@ export default function Profile() {
             onChange={handleResumeUpload}
             className="mb-4"
           />
-          <Button type="submit" className="w-full mb-4">
+          <Button type="submit" className="w-full mb-4 steak-button">
             Update Profile
           </Button>
         </form>

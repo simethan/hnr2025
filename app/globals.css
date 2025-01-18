@@ -92,3 +92,17 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.background-home {
+  background-color: rgb(255, 230, 204);
+}
+
+.steak-color {
+  color: rgb(86, 11, 11);
+}
+
+.steak-button {
+  background-color: rgb(86, 11, 11);
+  padding: 1.7rem 2.5rem;
+  font-size: 1rem;
+}
