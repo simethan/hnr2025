@@ -349,6 +349,9 @@ import { Rating } from "@/components/rating";
 import { supabase } from "@/lib/supabase";
 import { pdfToText } from "./pdftotext";
 import { DotLottie } from "@lottiefiles/dotlottie-web";
+const Groq = require('groq-sdk');
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "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", dangerouslyAllowBrowser: true});
 
 export default function Profile() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
@@ -414,6 +417,8 @@ export default function Profile() {
       setResumeUrl(data.resume_url || "");
       setCookedScore(data.cooked_score || 0);
     }
+
+    if (!data?.resume_url) return;
   };
 
   const handleSubmit = async (e) => {
@@ -441,20 +446,53 @@ export default function Profile() {
     if (error) {
       console.error(error);
     } else if (data) {
-      await pdfToText(resumeUrl);
-      setCookedScore(calculateCookedScore(data));
+      var resumeText: any | string = await pdfToText(resumeUrl);
+      console.log(data)
+      const score = await calculateCookedScore(data, resumeText);
+      setCookedScore(score);
     }
   };
 
-  const calculateCookedScore = (profile) => {
-    let score = 0;
-    if (profile.linkedin_url) score += 0.3;
-    if (profile.github_url) score += 0.4;
-    if (profile.resume_url) score += 0.3;
-    return Math.min(score * 10, 10);
+
+  const calculateCookedScore = async (profile: any, resumeText: string): Promise<number> => {
+    try {
+      console.log("Calculating cooked score...");
+      console.log(`Resume:\n${resumeText}\n\nProgramming Statistics:\n${JSON.stringify(profile.programming_stats)}\n\nLinkedIn Statistics:\nConnections: ${profile.linkedin_connections}\nWork Experiences: ${profile.linkedin_experiences}\nCertificates:\n${JSON.stringify(profile.linkedin_certificates)}\nEducation:\n${JSON.stringify(profile.linkedin_education)}\n\n`);
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: "Task: Evaluate the quality of a Computer Science student's portfolio based on the following criteria, with the specified weightage:\nResume Analysis (40% Weightage):\nAssess the clarity, structure, and relevance of the resume content.\nLook for key elements such as education, work experience, projects, and skills.\n\nProgramming Languages (40% Weightage):\nReview the student's GitHub repositories to determine the variety and complexity of programming languages used.\nConsider the quality of the code, documentation, and project engagement.\nPenalize common programming languages and reward niche or less commonly used languages.\n\nLinkedIn Statistics (0% Weightage):\nAnalyze the student's LinkedIn profile for the number of connections, work experiences, educational background, and certifications.\nEvaluate how well these elements reflect the student's professional network and industry engagement.\n\nOutput: Provide a rating out of 10 to indicate how \"bad\" or lacking the portfolio is, with 10 being extremely poor and 0 being excellent. Include a brief justification for your rating based on the criteria above.\n\nJSON Format: Return the rating in this format:\njson\n{\"rating\": rating}"
+          },
+          {
+            role: "user",
+            content: `Resume:\n${resumeText}\n\nProgramming Statistics:\n${JSON.stringify(profile.programming_stats)}\n\nLinkedIn Statistics:\nConnections: ${profile.linkedin_connections}\nWork Experiences: ${profile.linkedin_experiences}\nCertificates:\n${JSON.stringify(profile.linkedin_certificates)}\nEducation:\n${JSON.stringify(profile.linkedin_education)}\n\n`
+          }
+        ],
+        model: "llama-3.3-70b-versatile",
+        temperature: 1,
+        max_completion_tokens: 1024,
+        top_p: 1,
+        stream: false,
+        response_format: {
+          type: "json_object"
+        },
+        stop: null
+      });
+
+      console.log("Chat completion:", chatCompletion);
+
+      const result = JSON.parse(chatCompletion.choices[0].message.content);
+      return result.rating;
+    } catch (error) {
+      console.error("Error calculating cooked score:", error);
+      return 0;
+    }
+
   };
 
   return (
+
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       {/* Popup Modal */}
       {isLoading && (
@@ -468,7 +506,6 @@ export default function Profile() {
           </div>
         </div>
       )}
-
       <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
         <h1 className="text-4xl font-bold mb-8">Your Profile</h1>
         <form onSubmit={handleSubmit} className="w-full max-w-xs mb-8">
@@ -492,15 +529,16 @@ export default function Profile() {
             onChange={(e) => setResumeUrl(e.target.files[0]?.name || "")}
             className="mb-4"
           />
-          <Button type="submit" className="w-full mb-4">
+          <Button type="submit" className="w-full mb-4 steak-button">
             Update Profile
           </Button>
         </form>
-        <CookedMeter score={cookedScore} />
-        {githubUrl.length !== 0 && linkedinUrl.length !== 0 && (
+        {githubUrl.length != 0 && linkedinUrl.length != 0 && (
+
           <Rating
             linkedinUrl={linkedinUrl}
             username={githubUrl.split("/").pop() || ""}
+            pdfUrl={resumeUrl}
           />
         )}
       </main>

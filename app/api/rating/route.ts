@@ -1,4 +1,5 @@
 import { BrightDataResponse } from "@/lib/brightdata"
+import crawler from "crawler-request";
 
 export async function POST(request: Request) {
     const githubFetch: typeof globalThis.fetch = (url, ...opts) => fetch(url, {
@@ -78,10 +79,24 @@ export async function POST(request: Request) {
         throw new Error('Failed to fetch LinkedIn data within the time limit')
       }
 
+      async function pdfToText(pdfUrl: string) {
+        try {
+            const response = await crawler(pdfUrl);
+            console.log(response.text || "No response");
+            return response.text;
+        } catch (error) {
+            console.error("Error fetching or parsing PDF:", error);
+            return null;
+        }
+    }
+
       const content = await request.json()
 
-      const data = await Promise.all([fetchGithubLanguages(content.github), fetchLinkedInProfile(content.linkedin)])
-
+      const [githubData, linkedinData, pdfText] = await Promise.all([
+        fetchGithubLanguages(content.github),
+        fetchLinkedInProfile(content.linkedin),
+        content.pdfUrl ? pdfToText(content.pdfUrl) : null
+    ]);
       
     //   return Response.json({
     //     github: data[0],
@@ -94,35 +109,36 @@ export async function POST(request: Request) {
     //     }
     //   })
 
-    const linkedinData = {
-        followers: data[1].followers,
-        work_experience: data[1].experience?.map((job: any) => ({
+    const linkedinDataProcessed = {
+      followers: linkedinData.followers,
+      work_experience: linkedinData.experience?.map((job: any) => ({
           company: job.company,
           title: job.title,
           duration: job.duration,
           description: job.description,
-        })),
-        education: data[1].education?.map((edu: any) => ({
+      })),
+      education: linkedinData.education?.map((edu: any) => ({
           school: edu.school,
           degree: edu.degree,
           field_of_study: edu.field_of_study,
           duration: edu.duration,
-        })),
-        certificates: data[1].certifications?.map((cert: any) => ({
+      })),
+      certificates: linkedinData.certifications?.map((cert: any) => ({
           name: cert.name,
           issuer: cert.issuer,
           issued_date: cert.issued_date,
-        })),
-        awards: data[1].honors_and_awards?.map((award: any) => ({
+      })),
+      awards: linkedinData.honors_and_awards?.map((award: any) => ({
           title: award.title,
           description: award.description,
           date: award.date,
-        })),
-      };
+      })),
+  };
       
       // Return the cleaned-up response
       return Response.json({
-        github: data[0], 
-        linkedin: linkedinData,
-      });
+        github: githubData,
+        linkedin: linkedinDataProcessed,
+        pdfContent: pdfText
+    });
 }
