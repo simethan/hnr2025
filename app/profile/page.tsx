@@ -78,6 +78,7 @@ export default function Profile() {
     if (error) {
       console.error(error);
     } else if (data) {
+      pdfToText(resumeUrl);
       setCookedScore(calculateCookedScore(data));
     }
   };
