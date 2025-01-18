@@ -438,10 +438,35 @@ export default function Profile() {
     }
   };
 
-  const calculateCookedScore = async (
-    profile: any,
-    resumeText: string
-  ): Promise<number> => {
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from("resumes")
+      .upload(fileName, file);
+
+    if (error) {
+      console.error(error);
+    } else if (data) {
+      console.log(data);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("resumes").getPublicUrl(data.path);
+      setResumeUrl(publicUrl);
+    }
+  };
+
+  const calculateCookedScore = async (profile: any, resumeText: string): Promise<number> => {
     try {
       console.log("Calculating cooked score...");
       console.log(
@@ -494,6 +519,7 @@ export default function Profile() {
       console.error("Error calculating cooked score:", error);
       return 0;
     }
+
   };
 
   return (
@@ -533,7 +559,9 @@ export default function Profile() {
           <Input
             type="file"
             accept=".pdf,.docx"
-            onChange={(e) => setResumeUrl(e.target.files![0]?.name || "")}
+
+            onChange={handleResumeUpload}
+
             className="mb-4"
           />
           <Button type="submit" className="w-full mb-4 steak-button">
