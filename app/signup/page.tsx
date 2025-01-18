@@ -19,11 +19,11 @@ export default function Signup() {
       password,
     })
 
-    await supabase.auth.signInWithPassword({ email, password })
-
     const res = await supabase
       .from('profiles')
       .upsert({ id: user.id, name })
+      .select()
+      .single()
 
     if (error || res.error) {
       console.error(error)
