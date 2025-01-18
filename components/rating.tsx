@@ -1,25 +1,41 @@
 import { use, useEffect, useState } from "react"
 import { CookedMeter } from "@/app/components/CookedMeter"
 import { supabase } from "@/lib/supabase";
+import { Button } from "./ui/button";
+import { v4 as uuidv4 } from 'uuid';
+import { useSearchParams } from "next/navigation";
 const Groq = require('groq-sdk');
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "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", dangerouslyAllowBrowser: true});
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "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", dangerouslyAllowBrowser: true });
 
 export function Rating(props: { linkedinUrl: string, username: string, pdfUrl: string }) {
   const [data, setData] = useState(null);
   const [cookedScore, setCookedScore] = useState(0);
-
+  const [shareData, setShareData] = useState(null);
+  const params = useSearchParams()
 
   useEffect(() => {
     getData()
+
+    if (params.has('share_id')) {
+      getShareData()
+    }
   }, [0])
 
+  async function getShareData() {
+    const data = await supabase.from('shares')
+      .select('*')
+      .eq('id', params.get('share_id'))
+      .single()
+
+    setShareData(data.data.shared_to)
+  }
 
   async function getData() {
     const data = await fetch('/api/rating', {
       method: 'POST',
       body: JSON.stringify({ github: props.username, linkedin: props.linkedinUrl, pdfUrl: props.pdfUrl }),
-    })  
+    })
 
     const r = await data.json()
     console.log(r)
@@ -86,6 +102,34 @@ export function Rating(props: { linkedinUrl: string, username: string, pdfUrl: s
   // const githubLanguages = await fetchGithubLanguages(props.username)
   // const linkedInProfile = await fetchLinkedInProfile(props.linkedinUrl)
 
+  async function createShare(e) {
+    e.preventDefault()
+
+    const user = await supabase.auth.getUser()
+
+    const share = await supabase.from('shares')
+      .upsert({
+        id: uuidv4(),
+        owner_id: user.data.user?.id,
+        name: 'Users share',
+        shared_to: [
+          {
+            user: user.data.user?.id,
+            name: (await supabase.from("profiles").select("*").eq("id", user.data.user?.id).single()).data.name,
+            score: cookedScore
+          }
+        ]
+      })
+      .select()
+      .single()
+
+    window.navigator.clipboard.writeText(`${window.location.origin}/profile?share_id=${share.data.id}`)
+
+    alert(`Copied to clipboard!`)
+
+    return true
+  }
+
   return (
     <div>
       {/* <h2>GitHub Languages</h2>
@@ -96,6 +140,31 @@ export function Rating(props: { linkedinUrl: string, username: string, pdfUrl: s
       {/* {JSON.stringify(props)} */}
 
       <CookedMeter score={cookedScore || 0} />
+
+      {shareData === null ? (
+        <>
+
+          {cookedScore === 0 ? (
+            <form onSubmit={createShare}>
+              <Button type="submit" className="w-full my-10">
+                Share results!
+              </Button>
+            </form>
+          ) : null}
+
+        </>
+      ) : (
+
+        <>
+
+        {shareData?.map(u => (
+          <pre key={u.user}>{u.name}: {u.score}</pre>
+        ))}
+
+        </>
+
+      )}
+
     </div>
   )
 }
