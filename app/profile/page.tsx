@@ -18,6 +18,16 @@ export default function Profile() {
     fetchProfile()
   }, [])
 
+  async function getRating() {
+    'use server'
+    
+    // GitHub stuff
+
+    // Resume stuff
+
+    // LinkedIn stuff
+  }
+
   const fetchProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
