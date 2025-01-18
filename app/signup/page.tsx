@@ -28,7 +28,7 @@ export default function Signup() {
     if (error || res.error) {
       console.error(error)
     } else {
-      router.push('/login')
+      router.push('/profile')
     }
   }
 
