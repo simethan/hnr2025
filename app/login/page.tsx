@@ -48,6 +48,9 @@ export default function Login() {
             Login
           </Button>
         </form>
+        <a href="/signup" className="mt-2">
+          New to us? Sign up!
+        </a>
       </main>
     </div>
   );
