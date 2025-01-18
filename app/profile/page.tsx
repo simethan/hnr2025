@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { CookedMeter } from "@/app/components/CookedMeter";
 import { Rating } from "@/components/rating";
 import { supabase } from "@/lib/supabase";
+import { pdfToText } from "./pdftotext";
 
 export default function Profile() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
