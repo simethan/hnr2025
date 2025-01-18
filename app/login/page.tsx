@@ -21,7 +21,7 @@ export default function Login() {
     if (error) {
       console.error(error)
     } else {
-      router.push('/profile')
+      router.push('/home')
     }
   }
 

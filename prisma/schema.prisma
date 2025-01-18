@@ -57,3 +57,19 @@ create policy "Anyone can update their own avatar."
   on storage.objects for update
   using ( auth.uid() = owner );
 
+-- Set up resume storage
+insert into storage.buckets (id, name)
+values ('resumes', 'resumes');
+
+create policy "Resume files are accessible by the owner."
+  on storage.objects for select
+  using ( auth.uid() = owner );
+
+create policy "Users can upload their own resume."
+  on storage.objects for insert
+  with check ( bucket_id = 'resumes' AND auth.uid() = owner );
+
+create policy "Users can update their own resume."
+  on storage.objects for update
+  using ( bucket_id = 'resumes' AND auth.uid() = owner );
+
