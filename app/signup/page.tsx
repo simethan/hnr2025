@@ -14,17 +14,16 @@ export default function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const { error } = await supabase.auth.signUp({
+    const { error, data: { user } } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          name,
-        },
-      },
     })
 
-    if (error) {
+    const res = await supabase
+      .from('profiles')
+      .upsert({ id: user.id, name })
+
+    if (error || res.error) {
       console.error(error)
     } else {
       router.push('/login')
