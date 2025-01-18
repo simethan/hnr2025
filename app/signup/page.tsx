@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
 
+
 export default function Signup() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
