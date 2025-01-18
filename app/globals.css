@@ -110,3 +110,9 @@ body {
   padding: 1.7rem 2.5rem;
   font-size: 1rem;
 }
+
+.steak-image {
+  max-width: 200px;
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+}

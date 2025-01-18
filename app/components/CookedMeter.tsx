@@ -23,6 +23,15 @@ export function CookedMeter({ score }: CookedMeterProps) {
     return "bg-gray-900";
   };
 
+  const getImage = (score: number) => {
+    if (score < 2) return "raw.png";
+    if (score < 4) return "rare.png";
+    if (score < 6) return "mediumrare.png";
+    if (score < 8) return "medium.png";
+    if (score < 9) return "mediumwell.png";
+    return "welldone.png";
+  };
+
   return (
     <div className="w-full max-w-md">
       <div className="mb-2 text-xl font-semibold">🧑‍🍳 Cooked-ness Meter 👩‍🍳</div>
@@ -34,6 +43,9 @@ export function CookedMeter({ score }: CookedMeterProps) {
       </div>
       <div className="mt-2 text-xl font-semibold">
         {getDonenessLevel(score)} ({score.toFixed(0)}/10)
+      </div>
+      <div className="flex flex-col items-center">
+        <img src={getImage(score)} className="steak-image" />
       </div>
     </div>
   );
