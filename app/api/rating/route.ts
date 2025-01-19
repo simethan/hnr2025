@@ -15,6 +15,7 @@ export async function POST(request: Request) {
         try {
           const response = await githubFetch(`https://api.github.com/users/${username}/repos`)
           if (!response.ok) {
+            console.error('Failed to fetch repos:', response)
             throw new Error('Failed to fetch repos')
           }
           const repos = await response.json()
@@ -118,9 +119,9 @@ export async function POST(request: Request) {
           description: job.description,
       })),
       education: linkedinData.education?.map((edu: any) => ({
-          school: edu.school,
+          title: edu.title,
           degree: edu.degree,
-          field_of_study: edu.field_of_study,
+          description: edu.description,
           duration: edu.duration,
       })),
       certificates: linkedinData.certifications?.map((cert: any) => ({
