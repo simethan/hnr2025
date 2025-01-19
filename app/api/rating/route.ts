@@ -15,6 +15,7 @@ export async function POST(request: Request) {
         try {
           const response = await githubFetch(`https://api.github.com/users/${username}/repos`)
           if (!response.ok) {
+            console.log('github token', process.env.GITHUB_TOKEN)
             console.error('Failed to fetch repos:', response)
             throw new Error('Failed to fetch repos')
           }
